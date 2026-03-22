@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env['GITHUB_PAGES'] ? '/Instant-All-Purpose-Voting/' : '/',
+  base: '/Instant-All-Purpose-Voting/',
   server: {
     port: 5173,
     proxy: {

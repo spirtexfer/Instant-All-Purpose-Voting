@@ -30,7 +30,6 @@ jobs:
         run: npm run build
         working-directory: client
         env:
-          GITHUB_PAGES: true
           VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
 
       - uses: actions/configure-pages@v4
