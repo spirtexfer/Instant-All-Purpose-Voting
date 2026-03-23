@@ -9,5 +9,12 @@ npm run install:all
 npm run dev
 ```
 
-- Client: http://localhost:5173
-- Server: http://localhost:3001
+| Feature               | Existing tools | Your project |
+| --------------------- | -------------- | ------------ |
+| No login              | ✅              | ✅            |
+| Free                  | ✅              | ✅            |
+| Real-time voting      | ✅              | ✅            |
+| Weighted votes        | ❌              | ✅            |
+| Per-user vote control | ❌              | ✅            |
+| Multi-round session   | ❌              | ✅            |
+| Host moderation       | ❌              | ✅            |
