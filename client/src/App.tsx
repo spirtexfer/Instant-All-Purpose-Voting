@@ -17,6 +17,13 @@ export default function App() {
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttemptedRef = useRef(false);
   const connectionErrorShownRef = useRef(false);
+  const appScreenRef = useRef<AppScreen>('home');
+  const sessionLostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep ref in sync so socket callbacks can read current screen without stale closure
+  useEffect(() => {
+    appScreenRef.current = appScreen;
+  }, [appScreen]);
 
   const addToast = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
     const id = String(++toastIdCounter);
@@ -45,6 +52,16 @@ export default function App() {
       setMySocketId(socket.id || '');
       connectionErrorShownRef.current = false;
 
+      // If reconnecting while in an active session, verify the session still exists.
+      // Render spins down after inactivity, wiping all in-memory session data.
+      // If no session:state arrives within 7s, the server restarted — go home.
+      if (appScreenRef.current !== 'home') {
+        sessionLostTimerRef.current = setTimeout(() => {
+          handleReturnHome();
+          addToast('Session lost — server restarted.', 'warning');
+        }, 7000);
+      }
+
       // Attempt host reconnect if we have stored credentials
       if (!reconnectAttemptedRef.current) {
         reconnectAttemptedRef.current = true;
@@ -69,6 +86,10 @@ export default function App() {
     });
 
     socket.on('session:state', (state: ClientSessionState) => {
+      if (sessionLostTimerRef.current) {
+        clearTimeout(sessionLostTimerRef.current);
+        sessionLostTimerRef.current = null;
+      }
       setSessionState(state);
       setAppScreen(state.phase === 'lobby' ? 'lobby' : state.phase === 'voting' ? 'voting' : 'results');
     });
@@ -95,6 +116,7 @@ export default function App() {
     });
 
     return () => {
+      if (sessionLostTimerRef.current) clearTimeout(sessionLostTimerRef.current);
       socket.off('connect');
       socket.off('disconnect');
       socket.off('session:state');

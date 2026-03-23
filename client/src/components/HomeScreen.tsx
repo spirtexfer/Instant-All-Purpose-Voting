@@ -111,7 +111,7 @@ export default function HomeScreen({ socket, isConnected, onSessionCreated, addT
               <div className="w-4 h-4 rounded-full border-2 border-brand border-t-transparent animate-spin" />
               <span className="text-base">Connecting to server...</span>
             </div>
-            <p className="text-xs text-gray-600">This may take up to 30 seconds on first load</p>
+            <p className="text-xs text-gray-600">This may take up to 60 seconds on first load</p>
           </div>
         )}
 
