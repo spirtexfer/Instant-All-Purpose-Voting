@@ -16,6 +16,7 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttemptedRef = useRef(false);
+  const connectionErrorShownRef = useRef(false);
 
   const addToast = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
     const id = String(++toastIdCounter);
@@ -42,6 +43,7 @@ export default function App() {
     socket.on('connect', () => {
       setIsConnected(true);
       setMySocketId(socket.id || '');
+      connectionErrorShownRef.current = false;
 
       // Attempt host reconnect if we have stored credentials
       if (!reconnectAttemptedRef.current) {
@@ -86,7 +88,10 @@ export default function App() {
     });
 
     socket.on('connect_error', () => {
-      addToast('Connection error. Retrying...', 'error');
+      if (!connectionErrorShownRef.current) {
+        connectionErrorShownRef.current = true;
+        addToast('Connection error. Retrying...', 'error');
+      }
     });
 
     return () => {

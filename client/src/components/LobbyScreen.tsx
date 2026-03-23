@@ -29,7 +29,7 @@ export default function LobbyScreen({ socket, sessionState, mySocketId, onLeaveS
     if (selectedParticipant && !sessionState.participants.find(p => p.socketId === selectedParticipant.socketId)) {
       setSelectedParticipant(null);
     }
-  }, [sessionState.participants]);
+  }, [sessionState.participants, selectedParticipant]);
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(sessionState.code);

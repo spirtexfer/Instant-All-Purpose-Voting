@@ -15,7 +15,7 @@ import {
   castVote,
   computeResults,
 } from './sessionManager';
-import { ClientSessionState, Session } from './types';
+import { ClientSessionState, Session, SessionConfig } from './types';
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -78,6 +78,18 @@ function buildClientState(session: Session, viewerSocketId: string): ClientSessi
   };
 }
 
+function checkAndAutoEnd(session: Session): void {
+  if (session.phase !== 'voting') return;
+  const eligible = getEligibleVoterCount(session);
+  const voted = getVotedCount(session);
+  if (eligible > 0 && voted >= eligible) {
+    session.phase = 'results';
+    session.results = computeResults(session);
+    console.log(`Voting auto-ended in session ${session.code} (${voted}/${eligible} voted)`);
+    broadcastSessionState(session);
+  }
+}
+
 function broadcastSessionState(session: Session): void {
   for (const participant of session.participants.values()) {
     const state = buildClientState(session, participant.socketId);
@@ -88,16 +100,16 @@ function broadcastSessionState(session: Session): void {
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('session:create', (data: { config: any; hostName: string }, callback) => {
+  socket.on('session:create', (data: { config: Partial<SessionConfig>; hostName: string }, callback) => {
     const { config, hostName } = data;
     if (!hostName || !hostName.trim()) {
       return callback({ success: false, error: 'Host name required' });
     }
 
-    const sessionConfig = {
+    const sessionConfig: SessionConfig = {
       hostJoinsVote: config.hostJoinsVote ?? true,
-      superVotesPerPerson: Math.max(0, parseInt(config.superVotesPerPerson) || 1),
-      superVoteAmount: Math.max(2, parseInt(config.superVoteAmount) || 3),
+      superVotesPerPerson: Math.max(0, Number(config.superVotesPerPerson) || 1),
+      superVoteAmount: Math.max(2, Number(config.superVoteAmount) || 3),
       anonymous: config.anonymous ?? false,
       allowLateJoins: config.allowLateJoins ?? true,
       enableAbstains: config.enableAbstains ?? false,
@@ -222,17 +234,7 @@ io.on('connection', (socket) => {
     console.log(`${target.name} kicked from session ${session.code}`);
     callback({ success: true });
     broadcastSessionState(session);
-
-    // Auto-end if all remaining eligible voters have voted
-    if (session.phase === 'voting') {
-      const eligible = getEligibleVoterCount(session);
-      const voted = getVotedCount(session);
-      if (eligible > 0 && voted >= eligible) {
-        session.phase = 'results';
-        session.results = computeResults(session);
-        broadcastSessionState(session);
-      }
-    }
+    checkAndAutoEnd(session);
   });
 
   socket.on('participant:setSuperVotes', (data: { code: string; targetSocketId: string; amount: number }, callback) => {
@@ -300,16 +302,7 @@ io.on('connection', (socket) => {
 
     callback({ success: true });
     broadcastSessionState(session);
-
-    // Auto-end voting when all eligible voters have voted
-    const eligible = getEligibleVoterCount(session);
-    const voted = getVotedCount(session);
-    if (eligible > 0 && voted >= eligible && session.phase === 'voting') {
-      session.phase = 'results';
-      session.results = computeResults(session);
-      console.log(`Voting auto-ended in session ${session.code} (all ${eligible} voted)`);
-      broadcastSessionState(session);
-    }
+    checkAndAutoEnd(session);
   });
 
   socket.on('participant:leave', (data: { code: string }, callback) => {
@@ -327,17 +320,7 @@ io.on('connection', (socket) => {
     console.log(`${participant.name} left session ${session.code}`);
     callback({ success: true });
     broadcastSessionState(session);
-
-    // Auto-end if all remaining eligible voters have voted
-    if (session.phase === 'voting') {
-      const eligible = getEligibleVoterCount(session);
-      const voted = getVotedCount(session);
-      if (eligible > 0 && voted >= eligible) {
-        session.phase = 'results';
-        session.results = computeResults(session);
-        broadcastSessionState(session);
-      }
-    }
+    checkAndAutoEnd(session);
   });
 
   socket.on('vote:end', (data: { code: string }, callback) => {
@@ -416,17 +399,7 @@ io.on('connection', (socket) => {
       session.votes.delete(socket.id);
       removeParticipant(session, socket.id);
       broadcastSessionState(session);
-
-      // Auto-end if all remaining eligible voters have voted
-      if (session.phase === 'voting') {
-        const eligible = getEligibleVoterCount(session);
-        const voted = getVotedCount(session);
-        if (eligible > 0 && voted >= eligible) {
-          session.phase = 'results';
-          session.results = computeResults(session);
-          broadcastSessionState(session);
-        }
-      }
+      checkAndAutoEnd(session);
     }
   });
 });

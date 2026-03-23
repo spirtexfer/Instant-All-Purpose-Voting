@@ -124,7 +124,7 @@ export default function QuestionCreatorModal({ socket, sessionCode, onClose, add
             </button>
           )}
           <button type="submit" disabled={loading} className="btn-primary flex-1">
-            {loading ? 'Starting...' : '🚀 Start Voting'}
+            {loading ? 'Starting...' : 'Start Voting'}
           </button>
         </div>
       </form>
