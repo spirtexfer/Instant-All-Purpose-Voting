@@ -128,6 +128,7 @@ export default function App() {
       {appScreen === 'home' && (
         <HomeScreen
           socket={socket}
+          isConnected={isConnected}
           onSessionCreated={handleSessionCreated}
           addToast={addToast}
         />

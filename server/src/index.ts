@@ -21,6 +21,10 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', sessions: 0 });
+});
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {

@@ -5,13 +5,14 @@ import JoinModal from './JoinModal';
 
 interface Props {
   socket: Socket;
+  isConnected: boolean;
   onSessionCreated: (code: string, token: string) => void;
   addToast: (msg: string, type?: 'info' | 'success' | 'error' | 'warning') => void;
 }
 
 type ActiveModal = 'host' | 'join' | null;
 
-export default function HomeScreen({ socket, onSessionCreated, addToast }: Props) {
+export default function HomeScreen({ socket, isConnected, onSessionCreated, addToast }: Props) {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   return (
@@ -84,25 +85,35 @@ export default function HomeScreen({ socket, onSessionCreated, addToast }: Props
         </p>
 
         {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => setActiveModal('host')}
-            className="flex items-center justify-center bg-brand hover:bg-brand-dark text-white
-              font-semibold py-4 px-10 rounded-xl text-lg transition-all duration-200
-              active:scale-95 hover:shadow-glow border border-brand-light/20"
-          >
-            Host
-          </button>
+        {isConnected ? (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => setActiveModal('host')}
+              className="flex items-center justify-center bg-brand hover:bg-brand-dark text-white
+                font-semibold py-4 px-10 rounded-xl text-lg transition-all duration-200
+                active:scale-95 hover:shadow-glow border border-brand-light/20"
+            >
+              Host
+            </button>
 
-          <button
-            onClick={() => setActiveModal('join')}
-            className="flex items-center justify-center bg-surface-panel hover:bg-surface-hover
-              text-gray-100 font-semibold py-4 px-10 rounded-xl text-lg transition-all duration-200
-              active:scale-95 border border-surface-border hover:border-brand/50"
-          >
-            Join
-          </button>
-        </div>
+            <button
+              onClick={() => setActiveModal('join')}
+              className="flex items-center justify-center bg-surface-panel hover:bg-surface-hover
+                text-gray-100 font-semibold py-4 px-10 rounded-xl text-lg transition-all duration-200
+                active:scale-95 border border-surface-border hover:border-brand/50"
+            >
+              Join
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-3 text-gray-400">
+              <div className="w-4 h-4 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+              <span className="text-base">Connecting to server...</span>
+            </div>
+            <p className="text-xs text-gray-600">This may take up to 30 seconds on first load</p>
+          </div>
+        )}
 
         {/* Footer */}
         <p className="text-gray-600 text-sm mt-16">
